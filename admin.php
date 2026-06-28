@@ -1,5 +1,5 @@
 <?php
-// --- إعدادات الاتصال المحدثة لسيرفر Railway ---
+// إعدادات الاتصال المباشرة (Railway)
 $host = 'caboose.proxy.rlwy.net';
 $port = 48796;
 $user = 'root';
@@ -17,7 +17,7 @@ if ($conn->connect_error) {
 $admin_password = "adembz57"; 
 session_start();
 
-// --- إعداد سعر الصرف الجديد (1 دولار = 100 نقطة) ---
+// --- إعداد سعر الصرف (1 دولار = 100 نقطة) ---
 $point_rate = 100; 
 
 if (isset($_POST['login'])) {
