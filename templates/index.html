@@ -3,20 +3,29 @@
 <head>
     <meta charset="UTF-8">
     <title>Master Panel</title>
+    <style>
+        body { font-family: sans-serif; background-color: #f4f4f9; text-align: center; padding: 50px; }
+        .box { background: white; padding: 30px; border-radius: 10px; display: inline-block; box-shadow: 0px 0px 10px #ccc; }
+        input { padding: 10px; margin: 10px; border: 1px solid #ddd; border-radius: 5px; }
+        button { padding: 10px 20px; background: #28a745; color: white; border: none; border-radius: 5px; cursor: pointer; }
+    </style>
 </head>
 <body>
-    <h1>لوحة تحكم النظام</h1>
-    
-    {% if not session.get('logged_in') %}
-    <form method="POST">
-        <input type="password" name="pass" placeholder="أدخل كلمة المرور">
-        <button type="submit">دخول</button>
-    </form>
-    {% else %}
-    <form method="POST">
-        <button type="submit" name="generate_direct">توليد كود جديد</button>
-    </form>
-    {% if msg %}<p style="color:green;">{{ msg }}</p>{% endif %}
-    {% endif %}
+    <div class="box">
+        {% if not session.get('logged_in') %}
+            <h1>🔒 دخول المدير</h1>
+            <form method="POST">
+                <input type="password" name="pass" placeholder="كلمة المرور">
+                <button type="submit">دخول</button>
+            </form>
+        {% else %}
+            <h1>🚀 لوحة الإدارة</h1>
+            <form method="POST">
+                <button type="submit" name="generate_direct">توليد كود جديد</button>
+            </form>
+            {% if msg %}<p style="color:green;">{{ msg }}</p>{% endif %}
+            <br><a href="/logout">تسجيل خروج</a>
+        {% endif %}
+    </div>
 </body>
 </html>
