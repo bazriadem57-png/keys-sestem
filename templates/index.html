@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>Master Panel</title>
+</head>
+<body>
+    <h2>Master Panel Login</h2>
+    <form method="POST">
+        <input type="password" name="pass" placeholder="كلمة المرور">
+        <button type="submit">دخول</button>
+    </form>
+    
+    {% if error %}
+        <p style="color:red;">{{ error }}</p>
+    {% endif %}
+</body>
+</html>
