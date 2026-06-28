@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8"><title>Silent ExE - Python Admin</title>
+    <style>
+        body { background: #090214; color: white; font-family: sans-serif; display: flex; justify-content: center; padding: 20px; }
+        .container { width: 400px; background: #1a1a1a; padding: 20px; border-radius: 20px; border: 1px solid #7b1fa2; }
+        input, select, button { width: 100%; padding: 10px; margin: 5px 0; border-radius: 10px; border: none; background: #333; color: white; }
+        button { background: #7b1fa2; cursor: pointer; }
+        .msg { color: #00ff99; text-align: center; }
+        .error { color: #ff5252; text-align: center; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        {% if not logged_in %}
+            <h2>SYSTEM AUTH</h2>
+            {% if error %}<p class="error">{{ error }}</p>{% endif %}
+            <form method="POST"><input type="password" name="pass" required><button type="submit">LOGIN</button></form>
+        {% else %}
+            <h2>MASTER PANEL</h2>
+            {% if msg %}<p class="msg">{{ msg }}</p>{% endif %}
+            <form method="POST">
+                <select name="days"><option value="1">1 Day</option><option value="30">30 Days</option></select>
+                <button type="submit" name="generate_direct">GENERATE KEY</button>
+            </form>
+            {% if new_key %}<p style="text-align:center; color:#0f0;">{{ new_key }}</p>{% endif %}
+            <hr>
+            <a href="/logout">LOGOUT</a>
+        {% endif %}
+    </div>
+</body>
+</html>
