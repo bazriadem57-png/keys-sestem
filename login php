@@ -1,0 +1,64 @@
+<?php
+include 'db.php';
+
+header('Content-Type: application/json');
+
+// استقبال البيانات القادمة من التطبيق (المفتاح ومعرّف الجهاز)
+$subscription_key = $_POST['subscription_key'] ?? '';
+$device_id = $_POST['device_id'] ?? '';
+
+if (empty($subscription_key) || empty($device_id)) {
+    echo json_encode(["status" => "error", "message" => "بيانات ناقصة!"]);
+    exit;
+}
+
+// البحث عن المفتاح في قاعدة البيانات
+$stmt = $conn->prepare("SELECT * FROM keys_table WHERE subscription_key = ?");
+$stmt->bind_param("s", $subscription_key);
+$stmt->execute();
+$result = $stmt->get_result();
+
+if ($result->num_rows === 0) {
+    echo json_encode(["status" => "error", "message" => "المفتاح غير موجود أو خاطئ!"]);
+    exit;
+}
+
+$key_data = $result->fetch_assoc();
+
+// 1. إذا كان المفتاح غير مستخدم بعد، قم بتفعيله وربطه بالجهاز الحالي
+if ($key_data['status'] === 'unused') {
+    $expiry_date = date('Y-m-d H:i:s', strtotime('+30 days')); // صلاحية شهر مثلاً
+    
+    $update = $conn->prepare("UPDATE keys_table SET status = 'active', device_id = ?, expiry_date = ? WHERE subscription_key = ?");
+    $update->bind_param("sss", $device_id, $expiry_date, $subscription_key);
+    $update->execute();
+    
+    echo json_encode([
+        "status" => "success",
+        "message" => "تم تفعيل المفتاح بنجاح لمده 30 يوم!",
+        "expiry_date" => $expiry_date
+    ]);
+    exit;
+}
+
+// 2. إذا كان المفتاح نشطاً، تحقق هل هو لنفس الجهاز؟
+if ($key_data['status'] === 'active') {
+    if ($key_data['device_id'] !== $device_id) {
+        echo json_encode(["status" => "error", "message" => "هذا المفتاح مستخدم على جهاز آخر!"]);
+        exit;
+    }
+    
+    // التحقق من انتهاء الصلاحية
+    if (strtotime($key_data['expiry_date']) < time()) {
+        echo json_encode(["status" => "error", "message" => "عذراً، انتهت صلاحية هذا المفتاح!"]);
+        exit;
+    }
+    
+    echo json_encode([
+        "status" => "success",
+        "message" => "مفتاحك نشط وصالح للعمل.",
+        "expiry_date" => $key_data['expiry_date']
+    ]);
+    exit;
+}
+?>
