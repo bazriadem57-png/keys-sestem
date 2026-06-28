@@ -1,5 +1,5 @@
 <?php
-// إعدادات الاتصال المباشرة (Railway)
+// إعدادات الاتصال (مدمجة مباشرة داخل الملف)
 $host = 'caboose.proxy.rlwy.net';
 $port = 48796;
 $user = 'root';
@@ -92,7 +92,7 @@ if (isset($_SESSION['logged_in'])) {
     <style>
         * { box-sizing: border-box; }
         body, html { margin: 0; padding: 0; width: 100%; height: 100vh; background-color: #090214; font-family: 'Poppins', Arial, sans-serif; color: white; display: flex; justify-content: center; align-items: center; overflow: hidden; }
-        #bgvideo { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; object-fit: cover; z-index: -2; opacity: 0.25; will-change: transform; }
+        #bgvideo { position: fixed; right: 0; bottom: 0; min-width: 100%; min-height: 100%; object-fit: cover; z-index: -2; opacity: 0.25; }
         .blur { position: absolute; width: 100%; height: 100%; background: radial-gradient(circle, rgba(98,0,234,0.12) 0%, rgba(9,2,20,0.92) 80%); z-index: -1; }
         .container { position: relative; width: 460px; max-height: 95vh; overflow-y: auto; background: rgba(255, 255, 255, 0.03); padding: 35px 25px; border-radius: 40px; border: 1px solid rgba(255, 255, 255, 0.15); backdrop-filter: blur(20px); box-shadow: 0 0 40px rgba(123, 31, 162, 0.25); }
         .admin-card { text-align: center; }
