@@ -1,18 +1,22 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <title>Master Panel</title>
 </head>
 <body>
-    <h2>Master Panel Login</h2>
+    <h1>لوحة تحكم النظام</h1>
+    
+    {% if not session.get('logged_in') %}
     <form method="POST">
-        <input type="password" name="pass" placeholder="كلمة المرور">
+        <input type="password" name="pass" placeholder="أدخل كلمة المرور">
         <button type="submit">دخول</button>
     </form>
-    
-    {% if error %}
-        <p style="color:red;">{{ error }}</p>
+    {% else %}
+    <form method="POST">
+        <button type="submit" name="generate_direct">توليد كود جديد</button>
+    </form>
+    {% if msg %}<p style="color:green;">{{ msg }}</p>{% endif %}
     {% endif %}
 </body>
 </html>
