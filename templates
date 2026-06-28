@@ -1,5 +1,0 @@
-/my_project
-    ├── app.py           (الكود الذي سأعطيك إياه)
-    ├── requirements.txt  (يحتوي على: flask, mysql-connector-python, flask-session)
-    └── /templates
-        └── index.html   (ضع كود الـ HTML الخاص بك هنا)
