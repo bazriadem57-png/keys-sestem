@@ -4,9 +4,9 @@ import random
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.secret_key = 'your_super_secret_key_here' # قم بتغييرها لأي نص عشوائي
+app.secret_key = 'super_secret_key_change_this' 
 
-# إعدادات قاعدة البيانات (من Railway)
+# إعدادات قاعدة البيانات
 db_config = {
     'host': 'caboose.proxy.rlwy.net',
     'port': 48796,
@@ -18,7 +18,19 @@ db_config = {
 def get_db():
     return mysql.connector.connect(**db_config)
 
-# --- قسم الـ API (اللوجن الخاص بالتطبيق) ---
+# دالة تهيئة الجداول (يتم تشغيلها عند بدء التطبيق)
+def init_db():
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute("CREATE TABLE IF NOT EXISTS resellers (id INT AUTO_INCREMENT PRIMARY KEY, username VARCHAR(255), password VARCHAR(255), points INT DEFAULT 0)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS keys_table (id INT AUTO_INCREMENT PRIMARY KEY, key_code VARCHAR(255) UNIQUE, status VARCHAR(50) DEFAULT 'unused', expiry_date DATETIME NULL, device_id VARCHAR(255) NULL, duration_days INT DEFAULT 30)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS server_status (id INT AUTO_INCREMENT PRIMARY KEY, maintenance_mode INT DEFAULT 0)")
+    conn.commit()
+    conn.close()
+
+init_db()
+
+# --- قسم الـ API للتطبيق (اللوجن) ---
 @app.route('/login', methods=['POST'])
 def login_api():
     subscription_key = request.form.get('subscription_key')
@@ -29,40 +41,35 @@ def login_api():
 
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
-
     cursor.execute("SELECT * FROM keys_table WHERE key_code = %s", (subscription_key,))
     key_data = cursor.fetchone()
 
     if not key_data:
         conn.close()
-        return jsonify({"status": "error", "message": "المفتاح غير موجود أو خاطئ!"})
+        return jsonify({"status": "error", "message": "المفتاح غير موجود!"})
 
-    # منطق التفعيل
     if key_data['status'] == 'unused':
-        expiry_date = datetime.now() + timedelta(days=30)
+        expiry = datetime.now() + timedelta(days=key_data['duration_days'])
         cursor.execute("UPDATE keys_table SET status = 'active', device_id = %s, expiry_date = %s WHERE key_code = %s",
-                       (device_id, expiry_date, subscription_key))
+                       (device_id, expiry, subscription_key))
         conn.commit()
         conn.close()
-        return jsonify({"status": "success", "message": "تم التفعيل!", "expiry_date": str(expiry_date)})
+        return jsonify({"status": "success", "message": "تم التفعيل!", "expiry_date": str(expiry)})
 
-    # التحقق من النشاط
     if key_data['status'] == 'active':
         if key_data['device_id'] != device_id:
             conn.close()
-            return jsonify({"status": "error", "message": "المفتاح مستخدم على جهاز آخر!"})
-        
+            return jsonify({"status": "error", "message": "المفتاح مرتبط بجهاز آخر!"})
         if key_data['expiry_date'] < datetime.now():
             conn.close()
-            return jsonify({"status": "error", "message": "انتهت صلاحية المفتاح!"})
-
+            return jsonify({"status": "error", "message": "انتهت الصلاحية!"})
         conn.close()
         return jsonify({"status": "success", "message": "مفتاح نشط.", "expiry_date": str(key_data['expiry_date'])})
 
     conn.close()
-    return jsonify({"status": "error", "message": "خطأ داخلي"})
+    return jsonify({"status": "error", "message": "خطأ تقني"})
 
-# --- قسم الـ Master Panel (صفحة الإدارة) ---
+# --- قسم لوحة الإدارة (Master Panel) ---
 @app.route('/', methods=['GET', 'POST'])
 def admin_panel():
     if 'logged_in' not in session:
@@ -71,39 +78,20 @@ def admin_panel():
             return redirect(url_for('admin_panel'))
         return render_template('index.html', error="INVALID ADMIN KEY!" if request.method == 'POST' else None)
 
-    msg = None
-    new_key = None
     conn = get_db()
     cursor = conn.cursor(dictionary=True)
-
-    if request.method == 'POST':
-        # (نفس المنطق السابق للإدارة...)
-        if 'add_reseller' in request.form:
-            cursor.execute("INSERT INTO resellers (username, password, points) VALUES (%s, %s, 0)", 
-                           (request.form['res_user'], request.form['res_pass']))
-            conn.commit()
-            msg = "Reseller Added!"
-        
-        elif 'generate_direct' in request.form:
-            days = int(request.form['days'])
-            new_key = f"EXE-ADMIN-{random.randint(1000, 9999)}"
-            expiry = datetime.now() + timedelta(days=days)
-            cursor.execute("INSERT INTO keys_table (key_code, status, expiry_date) VALUES (%s, 'unused', %s)", (new_key, expiry))
-            conn.commit()
-            msg = "Key Generated!"
-
-    cursor.execute("SELECT maintenance_mode FROM server_status WHERE id = 1")
-    current_m = cursor.fetchone()['maintenance_mode']
-    cursor.execute("SELECT id, username, points FROM resellers ORDER BY id DESC")
-    resellers = cursor.fetchall()
     
-    conn.close()
-    return render_template('index.html', msg=msg, new_key=new_key, current_m=current_m, resellers=resellers)
+    # معالجة الأوامر من لوحة التحكم
+    if request.method == 'POST':
+        if 'generate_direct' in request.form:
+            new_key = f"EXE-ADMIN-{random.randint(1000, 9999)}"
+            cursor.execute("INSERT INTO keys_table (key_code, status) VALUES (%s, 'unused')", (new_key,))
+            conn.commit()
 
-@app.route('/logout')
-def logout():
-    session.clear()
-    return redirect(url_for('admin_panel'))
+    cursor.execute("SELECT * FROM resellers ORDER BY id DESC")
+    resellers = cursor.fetchall()
+    conn.close()
+    return render_template('index.html', resellers=resellers)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=10000)
